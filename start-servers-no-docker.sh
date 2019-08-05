@@ -14,7 +14,7 @@ cd "$(dirname "$0")"
 DIR="$(pwd -P)"
 source ../venv/bin/activate
 
-set -ve
+set -ex
 
 # Start Jupyter notebook server
 pgrep jupyter &>/dev/null || jupyter notebook &
@@ -33,10 +33,13 @@ go run cmd/worker/worker.go --autograder_dir="$DIR/tmp/autograder" --logtostderr
 # Stop the processes we started on Ctrl+C
 trap 'kill %3; kill %2; kill %1' SIGINT
 
+. ../docker/secret.env
+export COOKIE_AUTH_KEY COOKIE_ENCRYPT_KEY CLIENT_ID CLIENT_SECRET
+
 # Start the upload server
 go run cmd/uploadserver/main.go \
   --logtostderr --v=5 \
   --upload_dir="$DIR/tmp/uploads" \
   --allow_cors \
-  --openid_issuer="" \
+  --use_openid \
   --static_dir="$DIR/static"

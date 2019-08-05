@@ -165,6 +165,8 @@ func run() error {
 		CookieAuthKey: os.Getenv("COOKIE_AUTH_KEY"),
 		// CookieEncryptKey should be a random string of 16 or 32 characters.
 		CookieEncryptKey: os.Getenv("COOKIE_ENCRYPT_KEY"),
+		// Use secure cookie when using HTTPS.
+		SecureCookie: *useHTTPS,
 		// HashSalt should be a random string.
 		HashSalt:         os.Getenv("HASH_SALT"),
 		StaticDir:        *staticDir,

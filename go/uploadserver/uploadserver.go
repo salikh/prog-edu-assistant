@@ -58,6 +58,8 @@ type Options struct {
 	CookieAuthKey string
 	// Set to 16, 24 or 32 random bytes.
 	CookieEncryptKey string
+	// SecureCookie specifies whether the cookie must have Secure attribute or not.
+	SecureCookie bool
 	// HashSalt should be set to a random string. It is used for hashing student
 	// ids.
 	HashSalt string
@@ -97,6 +99,11 @@ func New(opts Options) *Server {
 			Endpoint:     opts.AuthEndpoint,
 		},
 		oauthState: uuid.New().String(),
+	}
+	s.cookieStore.Options = &sessions.Options{
+		MaxAge:   3600,
+		HttpOnly: true,
+		Secure:   s.opts.SecureCookie,
 	}
 	mux.Handle("/upload", handleError(s.handleUpload))
 	mux.Handle("/uploads/", http.StripPrefix("/uploads",
@@ -378,6 +385,7 @@ func (s *Server) handleCallback(w http.ResponseWriter, req *http.Request) error 
 		return nil
 	}
 	if len(s.opts.AllowedUsers) > 0 && !s.opts.AllowedUsers[profile.Email] {
+		session.Options.MaxAge = -1
 		delete(session.Values, "hash")
 		session.Save(req, w)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -385,6 +393,12 @@ func (s *Server) handleCallback(w http.ResponseWriter, req *http.Request) error 
 		w.Write([]byte(fmt.Sprintf("<title>Forbidden</title>User %s is not authorized.<br>"+
 			"Try a different Google account. <a href='https://mail.google.com/mail/logout'>Log out of Google</a>.", profile.Email)))
 		return nil
+	}
+	// Restrict the cookie by 1h, HttpOnly and Secure (if configured).
+	session.Options = &sessions.Options{
+		MaxAge:   3600,
+		HttpOnly: true,
+		Secure:   s.opts.SecureCookie,
 	}
 	// Instead of email, we store a salted cryptographic hash (pseudonymous id).
 	session.Values["hash"] = s.hashId(profile.Email)
@@ -417,6 +431,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, req *http.Request) error {
 	if err != nil {
 		return err
 	}
+	session.Options.MaxAge = -1
 	delete(session.Values, "hash")
 	session.Save(req, w)
 	http.Redirect(w, req, "/profile", http.StatusTemporaryRedirect)
@@ -428,7 +443,8 @@ func (s *Server) handleLogout(w http.ResponseWriter, req *http.Request) error {
 func (s *Server) authenticate(w http.ResponseWriter, req *http.Request) (string, error) {
 	session, err := s.cookieStore.Get(req, UserSessionName)
 	if err != nil {
-		return "", err
+		session.Options.MaxAge = -1
+		return "", fmt.Errorf("cookieStore.Get returned error %s", err)
 	}
 	hash, ok := session.Values["hash"].(string)
 	glog.V(3).Infof("authenticate %s: hash=%s", req.URL, session.Values["hash"])
