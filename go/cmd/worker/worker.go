@@ -96,7 +96,8 @@ func run() error {
 	glog.Infof("Listening on the queue %q", *autograderQueue)
 	// Enter the main work loop
 	for b := range ch {
-		glog.V(5).Infof("Received %d bytes: %s", len(b), string(b))
+		glog.Infof("Worker received %d bytes", len(b))
+		glog.V(5).Infof("Received notebook:\n%s\n--", string(b))
 		reportBytes, err := ag.Grade(b)
 		if err != nil {
 			// TODO(salikh): Add monitoring.

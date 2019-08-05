@@ -177,6 +177,8 @@ func idErrorf(id string, f string, args ...interface{}) error {
 // If found, it then proceeds to run all autograder scripts under nsjail,
 // parse the output, and produce the report, also in JSON format.
 func (ag *Autograder) Grade(notebookBytes []byte) ([]byte, error) {
+	glog.V(1).Infof("Grade notebook of %d bytes", len(notebookBytes))
+	glog.V(5).Infof("Grade notebook:\n%s\n--", string(notebookBytes))
 	data := make(map[string]interface{})
 	err := json.Unmarshal(notebookBytes, &data)
 	if err != nil {
@@ -277,6 +279,7 @@ func (ag *Autograder) Grade(notebookBytes []byte) ([]byte, error) {
 		if !fs.IsDir() {
 			return nil, idErrorf(submissionID, "%q is not a directory", exerciseDir)
 		}
+		glog.V(5).Infof("exercise_id: %s, source:\n%s\n--", exerciseID, cell.Source)
 		scratchDir := filepath.Join(baseScratchDir, exerciseID)
 		outcome, err := ag.GradeExercise(exerciseDir, scratchDir, cell.Source)
 		if err != nil {
@@ -310,6 +313,8 @@ func (ag *Autograder) Grade(notebookBytes []byte) ([]byte, error) {
 // Note: this function does not do any cleanup assuming that the caller will delete
 // the base scratch directory.
 func (ag *Autograder) GradeExercise(exerciseDir, scratchDir, submission string) (map[string]interface{}, error) {
+	glog.V(3).Infof("Grade exercise %s, submission of %d bytes", exerciseDir, len(submission))
+	glog.V(5).Infof("submission source:\n%s\n--", submission)
 	// Check whether the submission is not trivial.
 	filename := filepath.Join(exerciseDir, "empty_submission.py")
 	if b, err := ioutil.ReadFile(filename); err == nil {
