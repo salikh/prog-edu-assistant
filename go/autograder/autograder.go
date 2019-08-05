@@ -484,7 +484,10 @@ func (ag *Autograder) RunUnitTests(dir string) (map[string]interface{}, map[stri
 	return outcomes, logs, nil
 }
 
-var inlineOutcomeRegex = regexp.MustCompile(`(OK|ERROR|FAIL){{((?:[^}]|}[^}])*)}}`)
+var (
+	inlineOutcomeRegex = regexp.MustCompile(`(OK|ERROR|FAIL){{((?:[^}]|}[^}])*)}}`)
+	syntaxErrorRegex   = regexp.MustCompile(`(?m)(SyntaxError: .*)$`)
+)
 
 type inlineReportFill struct {
 	FormattedSource htmltemplate.HTML
@@ -545,6 +548,7 @@ func (ag *Autograder) RunInlineTest(dir, filename, submissionFilename string) (m
 		"--",
 		ag.PythonPath,
 		filename)
+	var passed bool
 	glog.V(5).Infof("about to execute %s %q", cmd.Path, cmd.Args)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -552,16 +556,25 @@ func (ag *Autograder) RunInlineTest(dir, filename, submissionFilename string) (m
 			return nil, "", "", fmt.Errorf("error running unit test command %q %q: %s", cmd.Path, cmd.Args, err)
 		}
 		// Overall status was non-ok.
-		outcome["passed"] = false
+		passed = false
 	} else {
 		// The file was run successfully.
-		outcome["passed"] = true
+		passed = true
 	}
-	mm := inlineOutcomeRegex.FindAllSubmatch(out, -1)
+	mm := syntaxErrorRegex.FindAllSubmatch(out, -1)
+	if len(mm) > 0 {
+		passed = false
+		var parts []string
+		for _, m := range mm {
+			parts = append(parts, string(m[1]))
+		}
+		outcome["error"] = strings.Join(parts, "; ")
+	}
+	outcome["passed"] = passed
+	mm = inlineOutcomeRegex.FindAllSubmatch(out, -1)
 	if len(mm) == 0 {
 		// Cannot find any individual test case outcomes.
 		outcome["passed"] = false
-		return outcome, string(out), "", nil
 	}
 	var reportBuf bytes.Buffer
 	for _, m := range mm {
@@ -580,23 +593,24 @@ func (ag *Autograder) RunInlineTest(dir, filename, submissionFilename string) (m
 				outcome["error"] = message
 			}
 		}
-		formattedSource, err := syntaxhighlight.AsHTML(submission, syntaxhighlight.OrderedList())
-		if err != nil {
-			var sourceBuf bytes.Buffer
-			err := sourceTmpl.Execute(&sourceBuf, submission)
-			if err != nil {
-				return nil, "", "", err
-			}
-			formattedSource = sourceBuf.Bytes()
-		}
-		err = inlineReportTmpl.Execute(&reportBuf, &inlineReportFill{
-			FormattedSource: htmltemplate.HTML(formattedSource),
-			Passed:          status == "OK",
-			Error:           message,
-		})
+	}
+	formattedSource, err := syntaxhighlight.AsHTML(submission, syntaxhighlight.OrderedList())
+	if err != nil {
+		var sourceBuf bytes.Buffer
+		err := sourceTmpl.Execute(&sourceBuf, submission)
 		if err != nil {
 			return nil, "", "", err
 		}
+		formattedSource = sourceBuf.Bytes()
+	}
+	message, _ := outcome["error"].(string)
+	err = inlineReportTmpl.Execute(&reportBuf, &inlineReportFill{
+		FormattedSource: htmltemplate.HTML(formattedSource),
+		Passed:          passed,
+		Error:           message,
+	})
+	if err != nil {
+		return nil, "", "", err
 	}
 	return outcome, string(out), reportBuf.String(), nil
 }
