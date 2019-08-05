@@ -1,7 +1,6 @@
 # Pilot - deadline 8/8
 
 > syntactic tests for dataframe 2
-> %%inlinetest for FP_OOP
 > fix 'x' in globals() in %%inlinetest when run for %%submission.
   ? suggest using locals() instead and couple that with inline execution of a
   submission together with the inline test?
