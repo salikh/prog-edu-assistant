@@ -1,11 +1,12 @@
 # Pilot - deadline 8/8
 
-> redirect to login screen on upload form auth failure
+* redirect to login screen on upload form auth failure
+* on manual upload, provide the report link
+> add stylesheet for reports
+  > add static files serving
 > detect more errors in %%inlinetest
   > detect and report nsjail time out in %%inlinetest
   > SyntaxError: unexpected character after line continuation character\n[I][
-> include source code in the automatic reports by %%inlinetest
-  > use github.com/sourcegraph/syntaxhighlighting
 > syntactic tests for dataframe 2
 > %%inlinetest for FP_OOP
 > fix 'x' in globals() in %%inlinetest when run for %%submission.
@@ -14,6 +15,7 @@
 
 Done
 
+* include source code in the automatic reports by %%inlinetest
 * use Origin value in CORS responses
 * drop outputs when uploading the notebook
 * hash and salt user id

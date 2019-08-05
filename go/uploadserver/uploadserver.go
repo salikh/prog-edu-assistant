@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"text/template"
 	"time"
 
 	"github.com/golang/glog"
@@ -156,6 +157,16 @@ func handleError(fn func(http.ResponseWriter, *http.Request) error) http.Handler
 			glog.Errorf("%s  %s", req.URL, err.Error())
 			status, ok := err.(httpError)
 			if ok {
+				if status == http.StatusUnauthorized {
+					// Provide a convenience login link.
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.WriteHeader(int(status))
+					fmt.Fprintf(w, `<html>
+<title>Not logged in</title>
+<h3>Not logged in</h3>
+Click here to log in: <a href='/login'>Log in</a>.`)
+					return
+				}
 				http.Error(w, err.Error(), int(status))
 			} else {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -330,7 +341,7 @@ func (s *Server) handleCallback(w http.ResponseWriter, req *http.Request) error 
 	// Instead of email, we store a salted cryptographic hash (pseudonymous id).
 	session.Values["hash"] = s.hashId(profile.Email)
 	session.Save(req, w)
-	http.Redirect(w, req, "/profile", http.StatusTemporaryRedirect)
+	http.Redirect(w, req, "/", http.StatusTemporaryRedirect)
 	return nil
 }
 
@@ -392,6 +403,8 @@ func (s *Server) handleUpload(w http.ResponseWriter, req *http.Request) error {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Max-Age", "1800")
+		// X-Report-Url header is used to report back the link to the report.
+		w.Header().Set("Access-Control-Expose-Headers", "X-Report-Url")
 		if req.Method == "OPTIONS" {
 			w.Header().Set("Access-Control-Allow-Methods", "POST")
 		}
@@ -458,11 +471,25 @@ func (s *Server) handleUpload(w http.ResponseWriter, req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	w.Header().Set("Content-Type", "text/plain")
+	// TODO(salikh): check if submissionID needs any escaping. Normally it is a UUID.
+	reportURL := "/report/" + submissionID
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// X-Report-Url header is used to report back the link to the report.
+	w.Header().Set("X-Report-Url", reportURL)
 	glog.V(5).Infof("Uploaded: %s", string(b))
-	fmt.Fprintf(w, "/report/"+submissionID)
+	err = uploadResultTmpl.Execute(w, reportURL)
+	if err != nil {
+		glog.Error(err)
+	}
 	return nil
 }
+
+var uploadResultTmpl = template.Must(template.New("uploadResultTmpl").Parse(`
+<html>
+<title>Upload completed</title>
+<h2>Upload succeeded</h2>
+Click here for the <a href='{{.}}'>Report</a>.
+`))
 
 func (s *Server) scheduleCheck(content []byte) error {
 	return s.opts.Channel.Post(s.opts.QueueName, content)
@@ -517,7 +544,11 @@ func (s *Server) uploadForm(w http.ResponseWriter, req *http.Request) error {
 }
 
 const uploadHTML = `<!DOCTYPE html>
-<title>Upload form</title>
+<title>Upload notebook | Prog-edu-assistant</title>
+<h2>Notebook upload</h2>
+You can upload a notebook for checking.
+Only notebooks from https://github.com/salikh/student-notebooks are accepted for checking.
+<p>
 <form method="POST" action="/upload" enctype="multipart/form-data">
 	<input type="file" name="notebook">
 	<input type="submit" value="Upload">
