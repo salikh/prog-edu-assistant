@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
-	"text/template"
 	"time"
 
 	"github.com/golang/glog"
@@ -95,7 +95,6 @@ func New(opts Options) *Server {
 		},
 		oauthState: uuid.New().String(),
 	}
-	mux.Handle("/", handleError(s.uploadForm))
 	mux.Handle("/upload", handleError(s.handleUpload))
 	mux.Handle("/uploads/", http.StripPrefix("/uploads",
 		http.FileServer(http.Dir(s.opts.UploadDir))))
@@ -108,8 +107,10 @@ func New(opts Options) *Server {
 		mux.Handle("/profile", handleError(s.handleProfile))
 	}
 	if s.opts.StaticDir != "" {
+		glog.Infof("Registering static file server on /static from %s", opts.StaticDir)
 		mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(opts.StaticDir))))
 	}
+	mux.Handle("/", handleError(s.uploadForm))
 	return s
 }
 
@@ -126,7 +127,7 @@ func (s *Server) hashId(id string) string {
 func (s *Server) ListenAndServe(addr string) error {
 	err := os.MkdirAll(s.opts.UploadDir, 0700)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating upload dir %q: %s", s.opts.UploadDir, err)
 	}
 	return http.ListenAndServe(addr, s.mux)
 }
@@ -249,10 +250,12 @@ function refresh(t) {
 		return err
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, `<title>Report for %s</title>`, basename)
 	var exerciseIDs []string
 	var reports = make(map[string]string)
 	// Extract reports
+	fill := &reportFill{
+		Title: "Report for " + basename,
+	}
 	for exerciseID, x := range data {
 		m, ok := x.(map[string]interface{})
 		if !ok {
@@ -266,15 +269,43 @@ function refresh(t) {
 			reports[exerciseID] = html
 			exerciseIDs = append(exerciseIDs, exerciseID)
 		}
-		sort.Strings(exerciseIDs)
-		// Just concatenate all reports in order.
-		for _, exerciseID := range exerciseIDs {
-			fmt.Fprintf(w, "<h2>%s</h2>", exerciseID)
-			fmt.Fprint(w, reports[exerciseID])
-		}
 	}
-	return nil
+	// Sort reports by exercise_id.
+	sort.Strings(exerciseIDs)
+	// Just concatenate all reports in order.
+	for _, exerciseID := range exerciseIDs {
+		fill.Exercises = append(fill.Exercises, exerciseFill{exerciseID, template.HTML(reports[exerciseID])})
+	}
+	if len(fill.Exercises) == 0 {
+		fill.ErrorMessage = fmt.Sprintf("No checks defined for %s", basename)
+	}
+	return reportTmpl.Execute(w, fill)
 }
+
+type exerciseFill struct {
+	ReportTitle string
+	ReportHTML  template.HTML
+}
+
+type reportFill struct {
+	Title        string
+	Exercises    []exerciseFill
+	ErrorMessage string
+}
+
+var reportTmpl = template.Must(template.New("reportTmpl").Parse(`
+<title>{{.Title}}</title>
+<link rel='stylesheet' type='text/css' href='/static/style.css'/>
+{{range .Exercises}}
+<h2>{{.ReportTitle}}</h2>
+{{.ReportHTML}}
+{{end}}
+{{if .ErrorMessage}}
+<div class='error'>
+{{.ErrorMessage}}
+</div>
+{{end}}
+`))
 
 // handleLogin handles Open ID Connect authentication.
 func (s *Server) handleLogin(w http.ResponseWriter, req *http.Request) error {
@@ -492,6 +523,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, req *http.Request) error {
 var uploadResultTmpl = template.Must(template.New("uploadResultTmpl").Parse(`
 <html>
 <title>Upload completed</title>
+<link rel='stylesheet' type='text/css' href='/static/style.css'/>
 <h2>Upload succeeded</h2>
 Click here for the <a href='{{.}}'>Report</a>.
 `))
@@ -550,6 +582,7 @@ func (s *Server) uploadForm(w http.ResponseWriter, req *http.Request) error {
 
 const uploadHTML = `<!DOCTYPE html>
 <title>Upload notebook | Prog-edu-assistant</title>
+<link rel='stylesheet' type='text/css' href='/static/style.css'/>
 <h2>Notebook upload</h2>
 You can upload a notebook for checking.
 Only notebooks from https://github.com/salikh/student-notebooks are accepted for checking.

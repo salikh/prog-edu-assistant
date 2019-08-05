@@ -489,7 +489,7 @@ var sourceTmpl = htmltemplate.Must(htmltemplate.New("rawsource").Parse(`<pre>{{.
 // The template to render reports from inline tests.
 var inlineReportTmpl = htmltemplate.Must(htmltemplate.New("inlinereport").Parse(
 	`<h3>Your submission</h3>
-<pre style='padding: 4px; border 1px #DDD; margin: 4px;'>
+<pre style='background: #F0F0F0; padding: 3pt; margin: 4pt; border: 1pt solid #DDD; border-radius: 3pt;'>
 {{.FormattedSource}}
 </pre>
 	{{if .Passed}}

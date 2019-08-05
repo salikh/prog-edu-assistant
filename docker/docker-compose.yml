@@ -6,7 +6,7 @@ services:
     ports:
       - "8000:8000"
     image: server:latest
-    entrypoint: ['/usr/local/bin/uploadserver', '-upload_dir', '/tmp', '-logtostderr', '-v', '3', '-queue_spec', 'amqp://guest:guest@rabbitmq:5672/', '-allow_cors', '-use_openid', '-openid_issuer', '']
+    entrypoint: ['/usr/local/bin/uploadserver', '-upload_dir', '/tmp', '-logtostderr', '-v', '3', '-queue_spec', 'amqp://guest:guest@rabbitmq:5672/', '-allow_cors', '-use_openid', '-openid_issuer', '', '-static_dir', '/static']
     env_file:
       # ./secret.env should define the follwing variables (note: values should not use quotes)
       #CLIENT_ID=<an OAuth2 client ID obtained from the Open ID Connect provider>
