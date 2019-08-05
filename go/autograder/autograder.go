@@ -487,6 +487,7 @@ func (ag *Autograder) RunUnitTests(dir string) (map[string]interface{}, map[stri
 var (
 	inlineOutcomeRegex = regexp.MustCompile(`(OK|ERROR|FAIL){{((?:[^}]|}[^}])*)}}`)
 	syntaxErrorRegex   = regexp.MustCompile(`(?m)(SyntaxError: .*)$`)
+	timeoutRegex       = regexp.MustCompile(`time limit.*Killing it`)
 )
 
 type inlineReportFill struct {
@@ -535,7 +536,7 @@ func (ag *Autograder) RunInlineTest(dir, filename, submissionFilename string) (m
 		"--disable_clone_newuser",
 		"--disable_clone_newuts",
 		"--disable_no_new_privs",
-		"--time_limit", "10",
+		"--time_limit", "3",
 		"--max_cpus", "1",
 		"--rlimit_as", "700",
 		"--env", "LANG=en_US.UTF-8",
@@ -569,6 +570,10 @@ func (ag *Autograder) RunInlineTest(dir, filename, submissionFilename string) (m
 			parts = append(parts, string(m[1]))
 		}
 		outcome["error"] = strings.Join(parts, "; ")
+	}
+	if timeoutRegex.Find(out) != nil {
+		passed = false
+		outcome["error"] = "Time out."
 	}
 	outcome["passed"] = passed
 	mm = inlineOutcomeRegex.FindAllSubmatch(out, -1)
