@@ -297,7 +297,9 @@ var reportTmpl = template.Must(template.New("reportTmpl").Parse(`
 <title>{{.Title}}</title>
 <link rel='stylesheet' type='text/css' href='/static/style.css'/>
 {{range .Exercises}}
+{{if .ReportTitle}}
 <h2>{{.ReportTitle}}</h2>
+{{end}}
 {{.ReportHTML}}
 {{end}}
 {{if .ErrorMessage}}

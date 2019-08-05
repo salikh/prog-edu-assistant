@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -148,10 +149,19 @@ func (ag *Autograder) CreateScratchDir(exerciseDir, scratchDir string, submissio
 }
 
 func joinInlineReports(inlineReports map[string]string) string {
+	var names []string
+	for name := range inlineReports {
+		names = append(names, name)
+	}
+	sort.Strings(names)
 	var parts []string
-	for name, report := range inlineReports {
-		parts = append(parts, "<h4 style='color: #387;'>"+name+"</h4>")
+	for i, name := range names {
+		report := inlineReports[name]
+		//parts = append(parts, "<h4 style='color: #387;'>"+name+"</h4>")
 		parts = append(parts, report)
+		if i < len(names)-1 {
+			parts = append(parts, "<br>")
+		}
 	}
 	return strings.Join(parts, "\n")
 }
@@ -488,14 +498,11 @@ var sourceTmpl = htmltemplate.Must(htmltemplate.New("rawsource").Parse(`<pre>{{.
 
 // The template to render reports from inline tests.
 var inlineReportTmpl = htmltemplate.Must(htmltemplate.New("inlinereport").Parse(
-	`<h3>Your submission</h3>
-<pre style='background: #F0F0F0; padding: 3pt; margin: 4pt; border: 1pt solid #DDD; border-radius: 3pt;'>
-{{.FormattedSource}}
-</pre>
-	{{if .Passed}}
-Looks OK.
+	`<div class='code'>{{.FormattedSource}}</div>
+{{if .Passed}}
+<span class='ico green'>&check;</span><span class='message'>Looks OK.</span>
 {{else}}
-{{.Error}}
+<span class='ico red'>&#x274C;</span><span class='message error'>{{.Error}}</span>
 {{end}}
 `))
 
@@ -573,7 +580,7 @@ func (ag *Autograder) RunInlineTest(dir, filename, submissionFilename string) (m
 				outcome["error"] = message
 			}
 		}
-		formattedSource, err := syntaxhighlight.AsHTML(submission)
+		formattedSource, err := syntaxhighlight.AsHTML(submission, syntaxhighlight.OrderedList())
 		if err != nil {
 			var sourceBuf bytes.Buffer
 			err := sourceTmpl.Execute(&sourceBuf, submission)
