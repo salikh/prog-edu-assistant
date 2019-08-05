@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -120,7 +121,7 @@ const UserSessionName = "user_session"
 // to hash the user id (email address) into a hash.
 func (s *Server) hashId(id string) string {
 	b := sha256.Sum224([]byte(s.opts.HashSalt + id))
-	return base64.StdEncoding.EncodeToString(b[:])
+	return hex.EncodeToString(b[:])
 }
 
 // ListenAndServe starts the server similarly to http.ListenAndServe.
