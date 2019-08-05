@@ -60,6 +60,8 @@ type Options struct {
 	// HashSalt should be set to a random string. It is used for hashing student
 	// ids.
 	HashSalt string
+	// StaticDir is set to the path of the directory exposed at /static URL.
+	StaticDir string
 }
 
 // Server provides an implementation of a web server for handling student
@@ -104,6 +106,9 @@ func New(opts Options) *Server {
 		mux.Handle("/callback", handleError(s.handleCallback))
 		mux.Handle("/logout", handleError(s.handleLogout))
 		mux.Handle("/profile", handleError(s.handleProfile))
+	}
+	if s.opts.StaticDir != "" {
+		mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(opts.StaticDir))))
 	}
 	return s
 }

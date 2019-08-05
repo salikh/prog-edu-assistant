@@ -48,6 +48,8 @@ var (
 		"The name of the autograder queue to send work requests.")
 	reportQueue = flag.String("report_queue", "report",
 		"The name of the queue to listen for the reports.")
+	staticDir = flag.String("static_dir", "", "The directory to serve static files from. "+
+		"The files are exposed at the path /static.")
 )
 
 func main() {
@@ -163,7 +165,8 @@ func run() error {
 		// CookieEncryptKey should be a random string of 16 or 32 characters.
 		CookieEncryptKey: os.Getenv("COOKIE_ENCRYPT_KEY"),
 		// HashSalt should be a random string.
-		HashSalt: os.Getenv("HASH_SALT"),
+		HashSalt:  os.Getenv("HASH_SALT"),
+		StaticDir: *staticDir,
 	})
 	go s.ListenForReports(ch)
 	fmt.Printf("\n  Serving on %s\n\n", serverURL)
