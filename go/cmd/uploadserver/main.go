@@ -21,9 +21,10 @@ import (
 )
 
 var (
-	port        = flag.Int("port", 8000, "The port to serve HTTP/S.")
-	useHTTPS    = flag.Bool("use_https", false, "If true, use HTTPS instead of HTTP.")
-	sslCertFile = flag.String("ssl_cert_file", "localhost.crt",
+	port             = flag.Int("port", 8000, "The port to serve HTTP/S.")
+	useHTTPS         = flag.Bool("use_https", false, "If true, use HTTPS instead of HTTP.")
+	httpRedirectPort = flag.Int("http_redirect_port", 0, "If non-zero, listen HTTP on the specified port and redirect to to SERVER_URL (assumed to be HTTPS)")
+	sslCertFile      = flag.String("ssl_cert_file", "localhost.crt",
 		"The path to the signed SSL server certificate.")
 	sslKeyFile = flag.String("ssl_key_file", "localhost.key",
 		"The path to the SSL server key.")
@@ -165,8 +166,9 @@ func run() error {
 		// CookieEncryptKey should be a random string of 16 or 32 characters.
 		CookieEncryptKey: os.Getenv("COOKIE_ENCRYPT_KEY"),
 		// HashSalt should be a random string.
-		HashSalt:  os.Getenv("HASH_SALT"),
-		StaticDir: *staticDir,
+		HashSalt:         os.Getenv("HASH_SALT"),
+		StaticDir:        *staticDir,
+		HTTPRedirectPort: *httpRedirectPort,
 	})
 	go s.ListenForReports(ch)
 	fmt.Printf("\n  Serving on %s\n\n", serverURL)

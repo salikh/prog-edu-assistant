@@ -63,6 +63,8 @@ type Options struct {
 	HashSalt string
 	// StaticDir is set to the path of the directory exposed at /static URL.
 	StaticDir string
+	// HTTPRedirectPort controls the HTTP redirect to HTTPS.
+	HTTPRedirectPort int
 }
 
 // Server provides an implementation of a web server for handling student
@@ -135,6 +137,13 @@ func (s *Server) ListenAndServe(addr string) error {
 
 // ListenAndServeTLS starts a server using HTTPS.
 func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
+	if s.opts.HTTPRedirectPort != 0 {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+			http.Redirect(w, req, s.opts.ServerURL, http.StatusTemporaryRedirect)
+		})
+		go http.ListenAndServe(fmt.Sprintf(":%d", s.opts.HTTPRedirectPort), mux)
+	}
 	config := &tls.Config{MinVersion: tls.VersionTLS10}
 	httpserver := &http.Server{
 		Addr:      addr,
