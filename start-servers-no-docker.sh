@@ -27,13 +27,14 @@ docker run --rm -p 5672:5672 rabbitmq &
 cd go
 mkdir -p ../tmp/uploads
 # Start the autograder worker
-go run cmd/worker/worker.go --autograder_dir=../tmp/autograder --logtostderr --v=3 --disable_cleanup --auto_remove --scratch_dir=/tmp/autograder &
+go run cmd/worker/worker.go --autograder_dir=../tmp/autograder --logtostderr --v=5 --disable_cleanup --auto_remove --scratch_dir=/tmp/autograder &
 
 # Stop the processes we started on Ctrl+C
 trap 'kill %3; kill %2; kill %1' SIGINT
 
 # Start the upload server
 go run cmd/uploadserver/main.go \
-  --logtostderr --v=3 \
+  --logtostderr --v=5 \
   --upload_dir=../tmp/uploads \
-  --allow_cors
+  --allow_cors \
+	--openid_issuer=""
