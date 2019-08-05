@@ -70,8 +70,8 @@ except Exception as e:
 try:
   {{.Submission}}
 except Exception as e:
-  print("\nWhile executing submission: ERROR{{"{{"}}%s{{"}}"}}" % e)
-  raise e
+  print("\nWhile executing submission: FAIL{{"{{"}}%s: %s{{"}}"}}" % (e.__class__, e))
+  sys.exit(1)
 try:
   {{.Inline}}
   print("OK{{"{{}}"}}")
