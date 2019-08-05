@@ -23,8 +23,8 @@ set -e
 @execute cp -L "bazel-bin/go/cmd/worker/linux_amd64_stripped/worker" "$DIR/worker/bin"
 @execute rm -rf "$DIR/server/bin" && mkdir "$DIR/server/bin"
 @execute cp -L "bazel-bin/go/cmd/uploadserver/linux_amd64_stripped/uploadserver" "$DIR/server/bin"
-@execute rm -rf "$DIR/server/static" && mkdir "$DIR/server/static"
-@execute cp -r "static" "$DIR/server/static"
+@execute rm -rf "$DIR/server/static"
+@execute cp -r "static" "$DIR/server/"
 
 @execute bazel run //go/cmd/uploadserver:docker -- --norun
 @execute bazel run //go/cmd/worker:docker -- --norun

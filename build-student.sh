@@ -11,7 +11,6 @@ bazel build ...
 tar xvf bazel-genfiles/exercises/tmp-autograder_tar.tar
 tar xvf bazel-genfiles/exercises/tmp-student_notebooks_tar.tar
 
-mkdir -p tmp/logs tmp/scratch
 cp -v student/* tmp/student/
 cp -rv nbextensions tmp/student/
 perl -i -pe \

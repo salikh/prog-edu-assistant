@@ -11,6 +11,7 @@
 #   ./start-servers.sh
 
 cd "$(dirname "$0")"
+DIR="$(pwd -P)"
 source ../venv/bin/activate
 
 set -ve
@@ -25,9 +26,9 @@ pgrep jupyter &>/dev/null || jupyter notebook &
 docker run --rm -p 5672:5672 rabbitmq &
 
 cd go
-mkdir -p ../tmp/uploads
+mkdir -p "$DIR/tmp/uploads" "$DIR/tmp/scratch"
 # Start the autograder worker
-go run cmd/worker/worker.go --autograder_dir=../tmp/autograder --logtostderr --v=5 --disable_cleanup --auto_remove --scratch_dir=/tmp/autograder &
+go run cmd/worker/worker.go --autograder_dir="$DIR/tmp/autograder" --logtostderr --v=5 --disable_cleanup --auto_remove --scratch_dir="$DIR/tmp/scratch" &
 
 # Stop the processes we started on Ctrl+C
 trap 'kill %3; kill %2; kill %1' SIGINT
@@ -35,6 +36,7 @@ trap 'kill %3; kill %2; kill %1' SIGINT
 # Start the upload server
 go run cmd/uploadserver/main.go \
   --logtostderr --v=5 \
-  --upload_dir=../tmp/uploads \
+  --upload_dir="$DIR/tmp/uploads" \
   --allow_cors \
-	--openid_issuer=""
+  --openid_issuer="" \
+  --static_dir="$DIR/static"
