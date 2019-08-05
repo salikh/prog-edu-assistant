@@ -101,6 +101,25 @@ go_repository(
     importpath = "github.com/gorilla/context",
 )
 
+# Dependency of github.com/sourcegraph/syntaxhighlight.
+go_repository(
+    name = "com_github_sourcegraph_annotate",
+    commit = "f4cad6c6324d3f584e1743d8b3e0e017a5f3a636",
+		importpath = "github.com/sourcegraph/annotate",
+		remote = "https://github.com/sourcegraph/annotate",
+    vcs = "git",
+)
+
+# github.com/sourcegraph/syntaxhighlight is used by inline tests to highlight
+# python source code submission.
+go_repository(
+    name = "com_github_sourcegraph_syntaxhighlight",
+    commit = "bd320f5d308e1a3c4314c678d8227a0d72574ae7",
+		importpath = "github.com/sourcegraph/syntaxhighlight",
+		remote = "https://github.com/sourcegraph/syntaxhighlight",
+    vcs = "git",
+)
+
 http_archive(
     name = "io_bazel_rules_docker",
     sha256 = "5dcd5820604c5b7e7c5f7db6e2b0cd1cf59eb0a30a0076fe3a4b86198365479a",
