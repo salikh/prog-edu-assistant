@@ -1,6 +1,7 @@
 module github.com/google/prog-edu-assistant
 
 require (
+	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/google/uuid v1.1.0
 	github.com/gorilla/sessions v1.1.3

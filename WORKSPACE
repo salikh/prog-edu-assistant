@@ -48,6 +48,14 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_andreyvit_diff",
+    commit = "c7f18ee00883bfd3b00e0a2bf7607827e0148ad4",  # HEAD from 2017-04-06
+    importpath = "github.com/andreyvit/diff",
+    remote = "https://github.com/andreyvit/diff",
+    vcs = "git",
+)
+
+go_repository(
     name = "in_gopkg_yaml_v2",
     commit = "51d6538a90f86fe93ac480b35f37b2be17fef232",  # v2.2.2
     importpath = "gopkg.in/yaml.v2",
@@ -105,8 +113,8 @@ go_repository(
 go_repository(
     name = "com_github_sourcegraph_annotate",
     commit = "f4cad6c6324d3f584e1743d8b3e0e017a5f3a636",
-		importpath = "github.com/sourcegraph/annotate",
-		remote = "https://github.com/sourcegraph/annotate",
+    importpath = "github.com/sourcegraph/annotate",
+    remote = "https://github.com/sourcegraph/annotate",
     vcs = "git",
 )
 
@@ -115,8 +123,8 @@ go_repository(
 go_repository(
     name = "com_github_sourcegraph_syntaxhighlight",
     commit = "bd320f5d308e1a3c4314c678d8227a0d72574ae7",
-		importpath = "github.com/sourcegraph/syntaxhighlight",
-		remote = "https://github.com/sourcegraph/syntaxhighlight",
+    importpath = "github.com/sourcegraph/syntaxhighlight",
+    remote = "https://github.com/sourcegraph/syntaxhighlight",
     vcs = "git",
 )
 
