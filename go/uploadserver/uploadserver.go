@@ -147,7 +147,11 @@ func (s *Server) ListenAndServeTLS(addr, certFile, keyFile string) error {
 	if s.opts.HTTPRedirectPort != 0 {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-			http.Redirect(w, req, s.opts.ServerURL, http.StatusTemporaryRedirect)
+			p := req.URL.Path
+			if p != "" && p[0] != '/' {
+				p = "/" + p
+			}
+			http.Redirect(w, req, s.opts.ServerURL+p, http.StatusTemporaryRedirect)
 		})
 		go http.ListenAndServe(fmt.Sprintf(":%d", s.opts.HTTPRedirectPort), mux)
 	}
