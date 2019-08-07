@@ -403,7 +403,7 @@ func (s *Server) handleCallback(w http.ResponseWriter, req *http.Request) error 
 	// Instead of email, we store a salted cryptographic hash (pseudonymous id).
 	session.Values["hash"] = s.hashId(profile.Email)
 	session.Save(req, w)
-	http.Redirect(w, req, "/", http.StatusTemporaryRedirect)
+	http.Redirect(w, req, "/profile", http.StatusTemporaryRedirect)
 	return nil
 }
 
@@ -418,7 +418,8 @@ func (s *Server) handleProfile(w http.ResponseWriter, req *http.Request) error {
 	hash, ok := session.Values["hash"]
 	if ok {
 		fmt.Fprintf(w, "Logged in as %s. <a href='/logout'>Log out link</a>.", hash)
-		fmt.Fprintf(w, "<p><strong>You can close this window and retry upload now.</strong>")
+		fmt.Fprintf(w, "<p>Click here to <a href='/'>upload</a> a notebook manually, or "+
+			"<strong>You can close this window and retry upload from the Jupyter notebook.</strong>")
 	} else {
 		fmt.Fprintf(w, "Logged out. <a href='/login'>Log in</a>.")
 	}
