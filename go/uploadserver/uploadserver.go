@@ -235,15 +235,16 @@ func (s *Server) handleReport(w http.ResponseWriter, req *http.Request) error {
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		// TODO(salikh): Make timeout configurable.
-		if reloadMs > 10000 {
+		if reloadMs > 20000 {
 			// Reset for retry.
 			reloadMs = 500
 			s.reportTimestamp[basename] = time.Now()
 		}
-		if reloadMs > 5000 {
+		if reloadMs > 10000 {
 			fmt.Fprintf(w, `<title>Something weng wrong</title>
 <h2>Error</h2>
-Something went wrong, please retry your upload.
+Something went wrong, please reload this page.
+If reloading does not help, wait a minute and retry your upload.
 `)
 			return nil
 		}
