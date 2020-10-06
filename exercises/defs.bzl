@@ -52,7 +52,7 @@ def _assignment_notebook_impl(ctx):
       inputs = [autograder_out],
       outputs = [tar_out],
       progress_message = "Running tar %s" % tarfile,
-      executable = "/usr/bin/tar",
+      executable = ctx.attr.tar,
       # Note: The below requires GNU tar.
       arguments = ["-c", "-f", tar_out.path, "--dereference", "--transform=s/^./autograder/", "-C", autograder_out.path, "."],
   )
@@ -94,6 +94,10 @@ assignment_notebook = rule(
 	executable = True,
 	cfg = "host",
     ),
+    "tar": attr.string(
+	# The path to the GNU tar command.
+	default = "/usr/bin/tar",
+    ),
   },
 )
 
@@ -110,7 +114,7 @@ def _autograder_tar_impl(ctx):
       inputs = tar_inputs + ctx.files._static + ctx.files._binary,
       outputs = [tar_out],
       progress_message = "Running tar %s" % tarfile,
-      executable = "/usr/bin/tar",
+      executable = ctx.attr.tar,
       # Note 1: The below requires GNU tar.
       # Note 2: The resulting tar contains zero blocks, so needs -i option when extracting.
       arguments = (["--concatenate", "-f", tar_out.path] +
@@ -137,6 +141,10 @@ autograder_tar = rule(
 	# Include the binary files. This attribute should not be set by the user.
 	default = Label("//go:binary_tar"),
 	cfg = "target",
+    ),
+    "tar": attr.string(
+	# The path to the GNU tar command.
+	default = "/usr/bin/tar",
     ),
   }
 )
@@ -172,30 +180,30 @@ def _student_tar_impl(ctx):
     files_tar_out = ctx.actions.declare_file(files_tarfile)
     # There are tar inputs. Generate in two steps.
     # Step 1: collect all file inputs into an intermediate tar.
-    #print("tar command: /usr/bin/tar -c -f " + files_tar_out.path + " --dereference " + " ".join(data_paths)+ " -C " + prefix + " ".join(notebook_paths))
+    #print("tar command: " + ctx.attr.tar + " -c -f " + files_tar_out.path + " --dereference " + " ".join(data_paths)+ " -C " + prefix + " ".join(notebook_paths))
     ctx.actions.run(
 	inputs = notebook_inputs + data_inputs,
 	outputs = [files_tar_out],
 	progress_message = "Running tar %s" % files_tarfile,
-	executable = "/usr/bin/tar",
+	executable = ctx.attr.tar,
 	arguments = (["-c", "-f", files_tar_out.path, "--dereference"] + data_paths + ["-C", prefix] + notebook_paths),
     )
-    #print("tar command: /usr/bin/tar --concatenate -f " + tar_out.path + " " + files_tar_out.path + " ".join(tar_paths))
+    #print("tar command: " + ctx.attr.tar + " --concatenate -f " + tar_out.path + " " + files_tar_out.path + " ".join(tar_paths))
     ctx.actions.run(
 	inputs = [files_tar_out] + tar_inputs,
 	outputs = [tar_out],
 	progress_message = "Running tar %s" % tarfile,
-	executable = "/usr/bin/tar",
+	executable = ctx.attr.tar,
 	arguments = (["--concatenate", "-f", tar_out.path, files_tar_out.path] + tar_paths),
     )
   else:
     # No tar inputs, just generate the output tar file.
-    #print("tar command: /usr/bin/tar -c -f " + tar_out.path + "-C" + prefix + "--dereference "+ " ".join(notebook_paths + data_paths))
+    #print("tar command: " + ctx.attr.tar + " -c -f " + tar_out.path + "-C" + prefix + "--dereference "+ " ".join(notebook_paths + data_paths))
     ctx.actions.run(
 	inputs = notebook_inputs + data_inputs,
 	outputs = [tar_out],
 	progress_message = "Running tar %s" % tarfile,
-	executable = "/usr/bin/tar",
+	executable = ctx.attr.tar,
 	arguments = (["-c", "-f", tar_out.path, "--dereference"] + data_paths + ["-C", prefix] + notebook_paths),
     )
   return [DefaultInfo(files = depset(outs))]
@@ -216,6 +224,10 @@ student_tar = rule(
 	mandatory=False,
 	allow_empty=True,
 	allow_files=True,
+    ),
+    "tar": attr.string(
+	# The path to the GNU tar command.
+	default = "/usr/bin/tar",
     ),
   },
 )
